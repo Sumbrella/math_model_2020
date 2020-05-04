@@ -9,26 +9,40 @@ from numba import jit
 import matplotlib.pyplot as plt
 
 sys.setrecursionlimit(10000000)
-N = 40
-X = pd.read_csv("data/X.csv", index_col=0, dtype=np.float32)
+N = 15
+X = pd.read_csv("../data/X.csv", index_col=0, dtype=np.float32)
 
 subV = [[0 for _ in range(N)] for _ in range(N)]
 for i in range(N):
     for j in range(N):
         if X.iat[i, j] > 0:
             subV[i][j] = [0 for _ in range(np.int(X.iat[i, j]) - 1)]
-subV = pd.DataFrame(subV, index=np.arange(1, 41), columns=np.arange(1, 41))
+subV = pd.DataFrame(subV, index=np.arange(1, N + 1), columns=np.arange(1, N + 1))
 subV[subV == 0] = None
-
-subC = np.array(subV)
-subC = subC.tolist()
 subV = np.array(subV).tolist()
+
+# subC = subV.copy()
+subC = [[0 for _ in range(N)] for _ in range(N)]
+for i in range(N):
+    for j in range(N):
+        if X.iat[i, j] > 0:
+            subC[i][j] = [0 for _ in range(np.int(X.iat[i, j]) - 1)]
+subC = pd.DataFrame(subC, index=np.arange(1, N + 1), columns=np.arange(1, N + 1))
+subC[subC == 0] = None
+subC = np.array(subC).tolist()
 
 C = np.zeros(N).T
 V = np.zeros(N).T
 
-pre_V = V
-pre_sub_V = subV  # 用来清零
+# 用来清零
+# pre_sub_V = [[0 for _ in range(N)] for _ in range(N)]
+# for i in range(N):
+#     for j in range(N):
+#         if X.iat[i, j] > 0:
+#             pre_sub_V[i][j] = [0 for _ in range(np.int(X.iat[i, j]) - 1)]
+# pre_sub_V = pd.DataFrame(pre_sub_V, index=np.arange(1, N + 1), columns=np.arange(1, N + 1))
+# pre_sub_V[pre_sub_V == 0] = None
+# pre_sub_V = np.array(pre_sub_V).tolist()
 
 minS = 0.01
 min_cost = 1e10
@@ -45,7 +59,7 @@ def safeCheck():
             return False
         for j in range(N):
             if subV[i][j] is not None:
-                for k in range(len(subV[i[j]])):
+                for k in range(len(subV[i][j])):
                     if subV[i][j][k] < minS:
                         return False
     return True
@@ -96,9 +110,16 @@ def ensureSafeValue():
 def cancleSafeValue():
     global V
     global subV
-    V = pre_V
-    subV = pre_sub_V
-
+    V = np.zeros(N).T
+    # subV = pre_sub_V
+    subV = [[0 for _ in range(N)] for _ in range(N)]
+    for i in range(N):
+        for j in range(N):
+            if X.iat[i, j] > 0:
+                subV[i][j] = [0 for _ in range(np.int(X.iat[i, j]) - 1)]
+    subV = pd.DataFrame(subV, index=np.arange(1, N + 1), columns=np.arange(1, N + 1))
+    subV[subV == 0] = None
+    subV = np.array(subV).tolist()
 
 # def sub_sub_dfs(i, j, k):
 #     global SA
@@ -131,10 +152,16 @@ def dfs(i):
     global SB, C, V, subC, subV, min_cost, kase
     if i == N:
         ensureSafeValue()
+        print("now_C:")
+        print(C)
+        print("now_subC:")
+        print(subC)
+        print("now_V")
+        print(V)
+        print("now_subV")
+        print(subV)
         if safeCheck():
             cost = price_0 * SA + price_1 * SB
-            print("now cases: %d" % kase)
-            print("now cost : %.2f" % cost)
             if cost < min_cost:
                 min_cost = cost
                 # 文件保存
